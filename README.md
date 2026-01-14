@@ -39,13 +39,3 @@ j → turn left
 l → turn right
 
 k → stop
-
-
-Save & exit.
-
----
-
-# ✅ STEP 5 — Add files to git
-
-```bash
-git status
