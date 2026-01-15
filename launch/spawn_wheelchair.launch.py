@@ -14,15 +14,14 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
 
-    pkg_name = 'wheelchair_simulation'
-    pkg_share = get_package_share_directory(pkg_name)
+    pkg_share = get_package_share_directory('wheelchair_simulation')
 
     urdf_file = os.path.join(pkg_share, 'urdf', 'wheelchair.urdf.xacro')
     bridge_config = os.path.join(pkg_share, 'config', 'bridge.yaml')
+    world_file = os.path.join(pkg_share, 'worlds', 'turtlebot3_house.world')
 
     robot_description = xacro.process_file(urdf_file).toxml()
 
-    # --- Gazebo (FIXED world handling) ---
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
@@ -32,44 +31,39 @@ def generate_launch_description():
             ])
         ),
         launch_arguments={
-            'gz_args': '-r empty.sdf'
+            'gz_args': f'-r {world_file}'
         }.items()
     )
 
-    # --- Robot State Publisher ---
     rsp = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
-        output='screen',
         parameters=[{
             'use_sim_time': True,
             'robot_description': robot_description
         }]
     )
 
-    # --- Spawn robot ---
     spawn = Node(
         package='ros_gz_sim',
         executable='create',
         arguments=[
             '-name', 'wheelchair',
             '-topic', 'robot_description',
-            '-x', '0',
-            '-y', '0',
-            '-z', '0.1'
+            '-x', '1.0',
+            '-y', '0.0',
+            '-z', '0.15'
         ],
         output='screen'
     )
 
-    # --- ROS ↔ Gazebo Bridge ---
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
             '--ros-args',
             '-p', f'config_file:={bridge_config}'
-        ],
-        output='screen'
+        ]
     )
 
     return LaunchDescription([
